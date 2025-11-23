@@ -1,0 +1,1164 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>日本抽選器</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'Arial', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .title {
+            color: white;
+            font-size: 32px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .game-container {
+            background: rgba(255,255,255,0.1);
+            border-radius: 20px;
+            padding: 20px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            position: relative;
+        }
+
+        /* 日本選獎器支架樣式 - 仿照上傳圖片 */
+        .lottery-machine {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .machine-stand {
+            width: 600px;
+            height: 120px;
+            background: 
+                linear-gradient(
+                    180deg,
+                    #CD853F 0%,
+                    #D2691E 20%,
+                    #8B4513 50%,
+                    #654321 80%,
+                    #4A4A4A 100%
+                );
+            border-radius: 20px 20px 40px 40px;
+            position: relative;
+            box-shadow: 
+                0 8px 25px rgba(0,0,0,0.5),
+                inset 0 3px 12px rgba(255,255,255,0.15),
+                inset 0 -8px 20px rgba(0,0,0,0.4);
+            border: 3px solid #4A4A4A;
+            margin-top: -30px;
+            z-index: -1;
+        }
+
+        .wood-grain {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: 
+                repeating-linear-gradient(
+                    0deg,
+                    transparent 0px,
+                    rgba(139,69,19,0.2) 2px,
+                    transparent 4px,
+                    rgba(160,82,45,0.15) 6px,
+                    transparent 8px
+                ),
+                repeating-linear-gradient(
+                    90deg,
+                    rgba(139,69,19,0.1) 0px,
+                    transparent 20px,
+                    rgba(139,69,19,0.1) 40px,
+                    transparent 60px
+                ),
+                radial-gradient(ellipse at 30% 40%, transparent 20%, rgba(101,67,33,0.3) 60%, transparent 80%),
+                radial-gradient(ellipse at 70% 60%, transparent 20%, rgba(139,69,19,0.2) 60%, transparent 80%);
+            border-radius: 20px 20px 40px 40px;
+        }
+
+        .stand-base {
+            position: absolute;
+            bottom: -15px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 500px;
+            height: 25px;
+            background: linear-gradient(180deg, #654321 0%, #4A4A4A 100%);
+            border-radius: 50px;
+            box-shadow: 
+                0 5px 15px rgba(0,0,0,0.6),
+                inset 0 2px 5px rgba(255,255,255,0.1);
+        }
+
+        .machine-nameplate {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(45deg, #FFD700, #FFA500);
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-weight: bold;
+            color: #8B4513;
+            font-size: 16px;
+            box-shadow: 
+                0 3px 10px rgba(0,0,0,0.4),
+                inset 0 2px 4px rgba(255,255,255,0.4);
+            border: 2px solid #B8860B;
+            text-shadow: 1px 1px 2px rgba(255,255,255,0.3);
+        }
+
+        #gameCanvas {
+            background: radial-gradient(circle at center, #1a1a2e 0%, #0f0f23 100%);
+            border: 3px solid #ffd700;
+            border-radius: 15px;
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
+            position: relative;
+            z-index: 1;
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+        }
+
+        button {
+            padding: 12px 24px;
+            font-size: 16px;
+            font-weight: bold;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        .speed-btn {
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            color: white;
+        }
+
+        .lottery-btn {
+            background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+            color: white;
+            font-size: 18px;
+            padding: 15px 30px;
+        }
+
+        .reset-btn {
+            background: linear-gradient(45deg, #3498db, #2980b9);
+            color: white;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .result-display {
+            margin-top: 20px;
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+            min-height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            font-weight: bold;
+            background: rgba(255,255,255,0.9);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .status-display {
+            color: white;
+            font-size: 18px;
+            margin: 10px 0;
+            text-align: center;
+        }
+
+        .prize-input {
+            display: flex;
+            gap: 15px;
+            margin: 15px 0;
+            flex-wrap: wrap;
+            justify-content: center;
+            background: rgba(255,255,255,0.1);
+            padding: 20px;
+            border-radius: 15px;
+            backdrop-filter: blur(5px);
+        }
+
+        .prize-group {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255,255,255,0.2);
+            padding: 15px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        input {
+            padding: 8px 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+            text-align: center;
+            width: 80px;
+            transition: all 0.3s ease;
+        }
+
+        input:focus {
+            border-color: #FFD700;
+            box-shadow: 0 0 5px rgba(255, 215, 0, 0.5);
+            outline: none;
+        }
+
+        .quantity-input {
+            width: 60px;
+            font-weight: bold;
+        }
+
+        label {
+            color: white;
+            font-weight: bold;
+            font-size: 12px;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+        }
+
+        .prize-color-indicator {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            border: 3px solid white;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+        }
+
+        .confetti {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background: #ffd700;
+            animation: fall 3s linear infinite;
+        }
+
+        @keyframes fall {
+            0% { transform: translateY(-100vh) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(100vh) rotate(360deg); opacity: 0; }
+        }
+
+        .celebration {
+            animation: bounce 0.6s ease-in-out infinite alternate;
+        }
+
+        @keyframes bounce {
+            0% { transform: scale(1); }
+            100% { transform: scale(1.05); }
+        }
+    </style>
+</head>
+<body>
+    <div class="title">🎯 日本抽選器 🎯</div>
+    
+    <div class="game-container">
+        <div class="lottery-machine">
+            <canvas id="gameCanvas" width="800" height="600"></canvas>
+            
+            <div class="machine-stand">
+                <div class="wood-grain"></div>
+                <div class="machine-nameplate">🎊 日本抽選器 🎊</div>
+                <div class="stand-base"></div>
+            </div>
+        </div>
+        
+        <div class="prize-input">
+            <div class="prize-group">
+                <div class="prize-color-indicator" style="background: #FFD700;"></div>
+                <label>金獎名稱</label>
+                <input type="text" id="goldPrize" value="特等獎" maxlength="10">
+                <label>數量</label>
+                <input type="number" id="goldCount" class="quantity-input" value="1" min="0" max="10">
+            </div>
+            <div class="prize-group">
+                <div class="prize-color-indicator" style="background: #FF4444;"></div>
+                <label>紅獎名稱</label>
+                <input type="text" id="redPrize" value="一等獎" maxlength="10">
+                <label>數量</label>
+                <input type="number" id="redCount" class="quantity-input" value="1" min="0" max="10">
+            </div>
+            <div class="prize-group">
+                <div class="prize-color-indicator" style="background: #44FF44;"></div>
+                <label>綠獎名稱</label>
+                <input type="text" id="greenPrize" value="二等獎" maxlength="10">
+                <label>數量</label>
+                <input type="number" id="greenCount" class="quantity-input" value="1" min="0" max="10">
+            </div>
+            <div class="prize-group">
+                <div class="prize-color-indicator" style="background: #4488FF;"></div>
+                <label>藍獎名稱</label>
+                <input type="text" id="bluePrize" value="三等獎" maxlength="10">
+                <label>數量</label>
+                <input type="number" id="blueCount" class="quantity-input" value="1" min="0" max="10">
+            </div>
+            <div class="prize-group">
+                <div class="prize-color-indicator" style="background: #FFFFFF;"></div>
+                <label>白球(未中獎)</label>
+                <input type="text" id="whitePrize" value="未中獎" maxlength="10" readonly style="background: #f0f0f0;">
+                <label>數量</label>
+                <input type="number" id="whiteCount" class="quantity-input" value="20" min="1" max="50">
+            </div>
+        </div>
+
+        <div class="controls">
+            <div class="control-group">
+                <button class="speed-btn" onclick="adjustSpeed(0.05)">🔼 加速</button>
+                <button class="speed-btn" onclick="adjustSpeed(-0.05)">🔽 減速</button>
+            </div>
+            
+            <button class="lottery-btn" onclick="startLottery()">🎲 開始抽選</button>
+            <button class="reset-btn" onclick="resetGame()">🔄 重新開始</button>
+            <button class="reset-btn" onclick="updateBalls()" style="background: linear-gradient(45deg, #9b59b6, #8e44ad);">⚙️ 更新球數</button>
+        </div>
+
+        <div class="status-display" id="statusDisplay">旋轉速度: 0.005</div>
+        <div class="result-display" id="resultDisplay">準備抽選中...</div>
+    </div>
+
+    <script>
+        // 獲取 Canvas 和相關元素
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const resultDisplay = document.getElementById('resultDisplay');
+        const statusDisplay = document.getElementById('statusDisplay');
+
+        // 遊戲常數
+        const WIDTH = canvas.width;
+        const HEIGHT = canvas.height;
+        const CENTER = { x: WIDTH / 2, y: HEIGHT / 2 };
+        const HEX_RADIUS = Math.min(WIDTH, HEIGHT) * 0.3;
+        const BALL_RADIUS = 18; // 球的半徑
+        const GRAVITY = 0.3;
+        const FRICTION = 0.98;
+        const EXIT_HOLE = { x: WIDTH - 150, y: HEIGHT - 120, radius: 25 };
+        const SLOW_GRAVITY = 0.08; // 慢速重力，用於球掉落
+
+        // 遊戲狀態
+        let ROTATION_SPEED = 0.005;
+        let targetSpeed = 0;
+        let isSlowingDown = false;
+        let slowDownTimer = 0;
+        let gameState = 'spinning'; // 'spinning', 'slowing', 'stopped', 'dropping'
+        let droppingBall = null;
+        let currentResult = null;
+        let confetti = [];
+
+        // 音效系統
+        let audioContext = null;
+        let rollingGainNode = null;
+        let rollingOscillator = null;
+        let isAudioEnabled = false;
+
+        // 獎項設定
+        function getPrizeTypes() {
+            return {
+                white: { 
+                    color: '#FFFFFF', 
+                    name: document.getElementById('whitePrize').value, 
+                    count: parseInt(document.getElementById('whiteCount').value) || 20 
+                },
+                gold: { 
+                    color: '#FFD700', 
+                    name: document.getElementById('goldPrize').value, 
+                    count: parseInt(document.getElementById('goldCount').value) || 1 
+                },
+                red: { 
+                    color: '#FF4444', 
+                    name: document.getElementById('redPrize').value, 
+                    count: parseInt(document.getElementById('redCount').value) || 1 
+                },
+                green: { 
+                    color: '#44FF44', 
+                    name: document.getElementById('greenPrize').value, 
+                    count: parseInt(document.getElementById('greenCount').value) || 1 
+                },
+                blue: { 
+                    color: '#4488FF', 
+                    name: document.getElementById('bluePrize').value, 
+                    count: parseInt(document.getElementById('blueCount').value) || 1 
+                }
+            };
+        }
+
+        // 球陣列
+        let balls = [];
+        let rotation = 0;
+
+        // 初始化球
+        function initBalls() {
+            balls = [];
+            const prizeTypes = getPrizeTypes();
+            
+            Object.keys(prizeTypes).forEach(type => {
+                const prize = prizeTypes[type];
+                for (let i = 0; i < prize.count; i++) {
+                    // 在六邊形內隨機分佈球
+                    let angle = Math.random() * Math.PI * 2;
+                    let radius = Math.random() * (HEX_RADIUS - BALL_RADIUS);
+                    
+                    balls.push({
+                        pos: {
+                            x: CENTER.x + Math.cos(angle) * radius,
+                            y: CENTER.y + Math.sin(angle) * radius
+                        },
+                        vel: {
+                            x: (Math.random() - 0.5) * 3,
+                            y: (Math.random() - 0.5) * 3
+                        },
+                        type: type,
+                        color: prize.color,
+                        name: prize.name,
+                        active: true
+                    });
+                }
+            });
+        }
+
+        // 計算六邊形頂點
+        function getHexagonVertices(rotation) {
+            const vertices = [];
+            for (let i = 0; i < 6; i++) {
+                const angle = rotation + i * Math.PI / 3;
+                const x = CENTER.x + HEX_RADIUS * Math.cos(angle);
+                const y = CENTER.y + HEX_RADIUS * Math.sin(angle);
+                vertices.push({ x, y });
+            }
+            return vertices;
+        }
+
+        // 點到線段距離
+        function pointToLineDistance(point, lineStart, lineEnd) {
+            const x0 = point.x, y0 = point.y;
+            const x1 = lineStart.x, y1 = lineStart.y;
+            const x2 = lineEnd.x, y2 = lineEnd.y;
+            
+            const l2 = (x2 - x1) ** 2 + (y2 - y1) ** 2;
+            if (l2 === 0) return Math.sqrt((x0 - x1) ** 2 + (y0 - y1) ** 2);
+            
+            let t = ((x0 - x1) * (x2 - x1) + (y0 - y1) * (y2 - y1)) / l2;
+            t = Math.max(0, Math.min(1, t));
+            
+            const projX = x1 + t * (x2 - x1);
+            const projY = y1 + t * (y2 - y1);
+            
+            return Math.sqrt((x0 - projX) ** 2 + (y0 - projY) ** 2);
+        }
+
+        // 線段法向量
+        function lineNormal(lineStart, lineEnd) {
+            const dx = lineEnd.x - lineStart.x;
+            const dy = lineEnd.y - lineStart.y;
+            const length = Math.sqrt(dx * dx + dy * dy);
+            
+            if (length === 0) return { x: 0, y: 0 };
+            return { x: -dy / length, y: dx / length };
+        }
+
+        // 檢查球是否在出孔附近
+        function checkExitHole(ball) {
+            const distance = Math.sqrt(
+                (ball.pos.x - EXIT_HOLE.x) ** 2 + 
+                (ball.pos.y - EXIT_HOLE.y) ** 2
+            );
+            return distance < EXIT_HOLE.radius + BALL_RADIUS;
+        }
+
+        // 初始化音效系統
+        function initAudio() {
+            try {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                isAudioEnabled = true;
+                console.log('音效系統初始化成功');
+                return true;
+            } catch (e) {
+                console.log('音效系統初始化失敗:', e);
+                isAudioEnabled = false;
+                return false;
+            }
+        }
+
+        // 創建滾動音效
+        function createRollingSound() {
+            if (!isAudioEnabled || !audioContext) return;
+
+            try {
+                // 停止之前的音效
+                stopRollingSound();
+
+                // 創建白噪音生成器（模擬滾動摩擦聲）
+                const bufferSize = 4096;
+                const whiteNoise = audioContext.createScriptProcessor(bufferSize, 1, 1);
+                whiteNoise.onaudioprocess = function(e) {
+                    const output = e.outputBuffer.getChannelData(0);
+                    for (let i = 0; i < bufferSize; i++) {
+                        output[i] = Math.random() * 2 - 1;
+                    }
+                };
+
+                // 創建濾波器（模擬球體滾動的低頻聲音）
+                const lowPassFilter = audioContext.createBiquadFilter();
+                lowPassFilter.type = 'lowpass';
+                lowPassFilter.frequency.value = 200 + ROTATION_SPEED * 1000; // 根據速度調整頻率
+                lowPassFilter.Q.value = 1;
+
+                // 創建高通濾波器
+                const highPassFilter = audioContext.createBiquadFilter();
+                highPassFilter.type = 'highpass';
+                highPassFilter.frequency.value = 50;
+                highPassFilter.Q.value = 1;
+
+                // 創建音量控制
+                rollingGainNode = audioContext.createGain();
+                rollingGainNode.gain.value = Math.min(ROTATION_SPEED * 0.3, 0.15); // 根據旋轉速度調整音量
+
+                // 連接音效鏈
+                whiteNoise.connect(highPassFilter);
+                highPassFilter.connect(lowPassFilter);
+                lowPassFilter.connect(rollingGainNode);
+                rollingGainNode.connect(audioContext.destination);
+
+                // 保存引用以便後續控制
+                rollingOscillator = whiteNoise;
+
+                console.log('滾動音效已創建');
+            } catch (e) {
+                console.log('創建滾動音效失敗:', e);
+            }
+        }
+
+        // 更新滾動音效
+        function updateRollingSound() {
+            if (!isAudioEnabled || !rollingGainNode) return;
+
+            try {
+                // 根據旋轉速度和球的活動程度調整音量
+                const activeBalls = balls.filter(b => b.active).length;
+                const baseVolume = Math.min(ROTATION_SPEED * 0.3, 0.15);
+                const ballActivityMultiplier = Math.min(activeBalls / 10, 1);
+                const targetVolume = baseVolume * ballActivityMultiplier;
+
+                // 平滑調整音量
+                rollingGainNode.gain.linearRampToValueAtTime(
+                    targetVolume, 
+                    audioContext.currentTime + 0.1
+                );
+            } catch (e) {
+                console.log('更新滾動音效失敗:', e);
+            }
+        }
+
+        // 停止滾動音效
+        function stopRollingSound() {
+            if (rollingOscillator) {
+                try {
+                    rollingOscillator.disconnect();
+                    rollingOscillator = null;
+                } catch (e) {
+                    console.log('停止滾動音效失敗:', e);
+                }
+            }
+            if (rollingGainNode) {
+                try {
+                    rollingGainNode.disconnect();
+                    rollingGainNode = null;
+                } catch (e) {
+                    console.log('停止增益節點失敗:', e);
+                }
+            }
+        }
+
+        // 創建球碰撞音效
+        function createCollisionSound(intensity = 0.5) {
+            if (!isAudioEnabled || !audioContext) return;
+
+            try {
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+
+                // 設定碰撞音效參數
+                oscillator.frequency.setValueAtTime(150 + Math.random() * 100, audioContext.currentTime);
+                oscillator.type = 'triangle';
+
+                gainNode.gain.setValueAtTime(intensity * 0.1, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.1);
+
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + 0.1);
+            } catch (e) {
+                console.log('創建碰撞音效失敗:', e);
+            }
+        }
+
+        // 創建球掉落音效
+        function createDropSound() {
+            if (!isAudioEnabled || !audioContext) return;
+
+            try {
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+
+                // 設定掉落音效參數（從高到低的滑音）
+                oscillator.frequency.setValueAtTime(400, audioContext.currentTime);
+                oscillator.frequency.exponentialRampToValueAtTime(100, audioContext.currentTime + 0.5);
+                oscillator.type = 'sine';
+
+                gainNode.gain.setValueAtTime(0.2, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.5);
+
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + 0.5);
+            } catch (e) {
+                console.log('創建掉落音效失敗:', e);
+            }
+        }
+        function createConfetti() {
+            for (let i = 0; i < 50; i++) {
+                confetti.push({
+                    x: Math.random() * WIDTH,
+                    y: -10,
+                    vx: (Math.random() - 0.5) * 4,
+                    vy: Math.random() * 3 + 2,
+                    color: ['#FFD700', '#FF4444', '#44FF44', '#4488FF', '#FF44FF'][Math.floor(Math.random() * 5)],
+                    size: Math.random() * 8 + 4,
+                    life: 200
+                });
+            }
+        }
+
+        // 更新彩帶
+        function updateConfetti() {
+            for (let i = confetti.length - 1; i >= 0; i--) {
+                const c = confetti[i];
+                c.x += c.vx;
+                c.y += c.vy;
+                c.vy += 0.1; // 重力
+                c.life--;
+                
+                if (c.life <= 0 || c.y > HEIGHT) {
+                    confetti.splice(i, 1);
+                }
+            }
+        }
+
+        // 繪製彩帶
+        function drawConfetti() {
+            confetti.forEach(c => {
+                ctx.save();
+                ctx.globalAlpha = c.life / 200;
+                ctx.fillStyle = c.color;
+                ctx.fillRect(c.x, c.y, c.size, c.size);
+                ctx.restore();
+            });
+        }
+
+        // 繪製函數
+        function draw() {
+            // 清空畫布
+            ctx.clearRect(0, 0, WIDTH, HEIGHT);
+            
+            // 繪製背景效果
+            const gradient = ctx.createRadialGradient(CENTER.x, CENTER.y, 0, CENTER.x, CENTER.y, HEX_RADIUS);
+            gradient.addColorStop(0, 'rgba(100, 100, 255, 0.1)');
+            gradient.addColorStop(1, 'rgba(100, 100, 255, 0.05)');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, WIDTH, HEIGHT);
+            
+            // 獲取六邊形頂點
+            const vertices = getHexagonVertices(rotation);
+            
+            // 繪製六邊形
+            ctx.beginPath();
+            ctx.moveTo(vertices[0].x, vertices[0].y);
+            for (let i = 1; i < vertices.length; i++) {
+                ctx.lineTo(vertices[i].x, vertices[i].y);
+            }
+            ctx.closePath();
+            ctx.strokeStyle = '#6464FF';
+            ctx.lineWidth = 4;
+            ctx.stroke();
+            
+            // 繪製六邊形發光效果
+            ctx.shadowColor = '#6464FF';
+            ctx.shadowBlur = 10;
+            ctx.stroke();
+            ctx.shadowBlur = 0;
+            
+            // 繪製出孔 - 位於六角形右下方靠近下緣1/3處
+            ctx.save();
+            
+            // 出孔外圈發光效果
+            ctx.shadowColor = '#FFD700';
+            ctx.shadowBlur = 15;
+            
+            ctx.beginPath();
+            ctx.arc(EXIT_HOLE.x, EXIT_HOLE.y, EXIT_HOLE.radius + 5, 0, Math.PI * 2);
+            ctx.strokeStyle = '#FFD700';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            
+            ctx.shadowBlur = 0;
+            
+            // 出孔的內部效果
+            ctx.beginPath();
+            ctx.arc(EXIT_HOLE.x, EXIT_HOLE.y, EXIT_HOLE.radius, 0, Math.PI * 2);
+            
+            const holeGradient = ctx.createRadialGradient(
+                EXIT_HOLE.x, EXIT_HOLE.y, 0,
+                EXIT_HOLE.x, EXIT_HOLE.y, EXIT_HOLE.radius
+            );
+            holeGradient.addColorStop(0, '#000');
+            holeGradient.addColorStop(0.6, '#111');
+            holeGradient.addColorStop(0.8, '#333');
+            holeGradient.addColorStop(1, '#FFD700');
+            
+            ctx.fillStyle = holeGradient;
+            ctx.fill();
+            
+            // 出孔邊框
+            ctx.strokeStyle = '#FFD700';
+            ctx.lineWidth = 3;
+            ctx.stroke();
+            
+            // 出孔方向箭頭
+            ctx.fillStyle = '#FFD700';
+            ctx.font = 'bold 16px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('↓', EXIT_HOLE.x, EXIT_HOLE.y + 5);
+            
+            // 出孔標示
+            ctx.font = '14px Arial';
+            ctx.fillStyle = '#FFD700';
+            ctx.textAlign = 'center';
+            ctx.fillText('出孔', EXIT_HOLE.x, EXIT_HOLE.y + EXIT_HOLE.radius + 25);
+            
+            ctx.restore();
+            
+            // 繪製球
+            balls.forEach(ball => {
+                if (ball.active) {
+                    // 球的陰影效果
+                    ctx.save();
+                    ctx.shadowColor = 'rgba(0,0,0,0.3)';
+                    ctx.shadowBlur = 8;
+                    ctx.shadowOffsetX = 2;
+                    ctx.shadowOffsetY = 2;
+                    
+                    ctx.beginPath();
+                    ctx.arc(ball.pos.x, ball.pos.y, BALL_RADIUS, 0, Math.PI * 2);
+                    ctx.fillStyle = ball.color;
+                    ctx.fill();
+                    
+                    // 球的邊框
+                    ctx.strokeStyle = ball.type === 'white' ? '#CCC' : '#FFF';
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+                    
+                    // 球的高光效果
+                    ctx.beginPath();
+                    ctx.arc(ball.pos.x - 8, ball.pos.y - 8, BALL_RADIUS / 3, 0, Math.PI * 2);
+                    ctx.fillStyle = 'rgba(255,255,255,0.4)';
+                    ctx.fill();
+                    
+                    ctx.restore();
+                }
+            });
+            
+            // 繪製掉落的球
+            if (droppingBall) {
+                ctx.save();
+                ctx.shadowColor = 'rgba(0,0,0,0.5)';
+                ctx.shadowBlur = 12;
+                
+                ctx.beginPath();
+                ctx.arc(droppingBall.pos.x, droppingBall.pos.y, BALL_RADIUS, 0, Math.PI * 2);
+                ctx.fillStyle = droppingBall.color;
+                ctx.fill();
+                ctx.strokeStyle = '#FFF';
+                ctx.lineWidth = 3;
+                ctx.stroke();
+                
+                ctx.restore();
+            }
+            
+            // 繪製彩帶
+            drawConfetti();
+            
+            // 顯示狀態信息
+            ctx.font = '18px Arial';
+            ctx.fillStyle = '#FFFFFF';
+            ctx.textAlign = 'left';
+            ctx.fillText(`剩餘球數: ${balls.filter(b => b.active).length}`, 20, 30);
+            ctx.fillText(`遊戲狀態: ${getGameStateText()}`, 20, 55);
+        }
+
+        // 獲取遊戲狀態文字
+        function getGameStateText() {
+            switch(gameState) {
+                case 'spinning': return '旋轉中';
+                case 'slowing': return '減速中';
+                case 'stopped': return '已停止';
+                case 'dropping': return '球掉落中';
+                default: return '未知狀態';
+            }
+        }
+
+        // 更新遊戲邏輯
+        function update() {
+            // 處理減速
+            if (isSlowingDown && slowDownTimer > 0) {
+                slowDownTimer--;
+                const progress = (600 - slowDownTimer) / 600;
+                ROTATION_SPEED = 0.005 * (1 - progress * 0.9); // 保留10%的速度避免完全停止
+                
+                if (slowDownTimer <= 0) {
+                    ROTATION_SPEED = 0;
+                    gameState = 'stopped';
+                    isSlowingDown = false;
+                    
+                    // 停止滾動音效
+                    stopRollingSound();
+                    
+                    // 選擇一個球掉落
+                    setTimeout(() => {
+                        selectBallToDrop();
+                    }, 1000);
+                }
+            }
+            
+            // 更新旋轉
+            rotation += ROTATION_SPEED;
+            
+            // 更新滾動音效
+            if (gameState === 'spinning' || gameState === 'slowing') {
+                updateRollingSound();
+            }
+            
+            // 更新掉落球
+            if (droppingBall) {
+                // 球慢慢從出孔掉落，使用較輕的重力
+                droppingBall.vel.y += SLOW_GRAVITY;
+                droppingBall.pos.x += droppingBall.vel.x;
+                droppingBall.pos.y += droppingBall.vel.y;
+                
+                // 檢查球是否掉出畫面
+                if (droppingBall.pos.y > HEIGHT + BALL_RADIUS) {
+                    console.log('球掉出畫面，顯示結果');
+                    showResult(droppingBall);
+                    droppingBall = null;
+                }
+            }
+            
+            // 只在旋轉時更新球的物理
+            if (gameState === 'spinning' || gameState === 'slowing') {
+                const vertices = getHexagonVertices(rotation);
+                
+                balls.forEach(ball => {
+                    if (!ball.active) return;
+                    
+                    // 應用重力
+                    ball.vel.y += GRAVITY;
+                    
+                    // 更新位置
+                    ball.pos.x += ball.vel.x;
+                    ball.pos.y += ball.vel.y;
+                    
+                    // 六邊形邊界碰撞檢測
+                    for (let i = 0; i < 6; i++) {
+                        const start = vertices[i];
+                        const end = vertices[(i + 1) % 6];
+                        const distance = pointToLineDistance(ball.pos, start, end);
+                        
+                        if (distance < BALL_RADIUS) {
+                            const normal = lineNormal(start, end);
+                            const centerToBall = {
+                                x: ball.pos.x - CENTER.x,
+                                y: ball.pos.y - CENTER.y
+                            };
+                            
+                            if (normal.x * centerToBall.x + normal.y * centerToBall.y > 0) {
+                                normal.x = -normal.x;
+                                normal.y = -normal.y;
+                            }
+                            
+                            const velocityDotNormal = ball.vel.x * normal.x + ball.vel.y * normal.y;
+                            ball.vel.x = (ball.vel.x - 2 * velocityDotNormal * normal.x) * FRICTION;
+                            ball.vel.y = (ball.vel.y - 2 * velocityDotNormal * normal.y) * FRICTION;
+                            
+                            const overlap = BALL_RADIUS - distance;
+                            ball.pos.x += normal.x * overlap;
+                            ball.pos.y += normal.y * overlap;
+                            
+                            // 播放碰撞音效
+                            const collisionIntensity = Math.min(Math.abs(velocityDotNormal), 1);
+                            if (collisionIntensity > 0.3) {
+                                createCollisionSound(collisionIntensity);
+                            }
+                        }
+                    }
+                    
+                    // 球與球碰撞
+                    balls.forEach(otherBall => {
+                        if (otherBall === ball || !otherBall.active) return;
+                        
+                        const dx = ball.pos.x - otherBall.pos.x;
+                        const dy = ball.pos.y - otherBall.pos.y;
+                        const distance = Math.sqrt(dx * dx + dy * dy);
+                        
+                        if (distance < BALL_RADIUS * 2) {
+                            const angle = Math.atan2(dy, dx);
+                            const targetX = otherBall.pos.x + Math.cos(angle) * BALL_RADIUS * 2;
+                            const targetY = otherBall.pos.y + Math.sin(angle) * BALL_RADIUS * 2;
+                            
+                            const ax = (targetX - ball.pos.x) * 0.1;
+                            const ay = (targetY - ball.pos.y) * 0.1;
+                            
+                            ball.vel.x += ax;
+                            ball.vel.y += ay;
+                            otherBall.vel.x -= ax;
+                            otherBall.vel.y -= ay;
+                            
+                            // 播放球與球碰撞音效
+                            const collisionForce = Math.sqrt(ax * ax + ay * ay);
+                            if (collisionForce > 0.1) {
+                                createCollisionSound(collisionForce * 2);
+                            }
+                        }
+                    });
+                });
+            }
+            
+            // 更新彩帶
+            updateConfetti();
+            
+            // 更新狀態顯示
+            statusDisplay.textContent = `旋轉速度: ${ROTATION_SPEED.toFixed(4)} | 遊戲狀態: ${getGameStateText()}`;
+        }
+
+        // 選擇球掉落
+        function selectBallToDrop() {
+            const activeBalls = balls.filter(ball => ball.active);
+            if (activeBalls.length === 0) return;
+            
+            // 隨機選擇一顆球
+            const selectedBall = activeBalls[Math.floor(Math.random() * activeBalls.length)];
+            
+            if (selectedBall) {
+                // 設定掉落球，直接從出孔位置開始慢慢掉落
+                droppingBall = {
+                    pos: { x: EXIT_HOLE.x, y: EXIT_HOLE.y }, // 直接從出孔位置開始
+                    vel: { 
+                        x: (Math.random() - 0.5) * 0.5, // 很輕微的水平隨機性
+                        y: 0.5 // 很慢的初始向下速度
+                    },
+                    color: selectedBall.color,
+                    type: selectedBall.type,
+                    name: selectedBall.name
+                };
+                
+                // 移除原球
+                selectedBall.active = false;
+                gameState = 'dropping';
+                
+                // 播放球掉落音效
+                createDropSound();
+                
+                console.log(`選中球: ${selectedBall.name}, 開始慢慢從出孔掉落`);
+            }
+        }
+
+        // 顯示結果
+        function showResult(ball) {
+            currentResult = ball;
+            
+            if (ball.type !== 'white') {
+                // 有獎項，創建慶祝效果
+                createConfetti();
+                resultDisplay.innerHTML = `🎉 恭喜獲得 ${ball.name}！🎉`;
+                resultDisplay.style.background = 'linear-gradient(45deg, #FFD700, #FF6B6B)';
+                resultDisplay.style.color = 'white';
+                resultDisplay.classList.add('celebration');
+                
+                // 播放慶祝音效（如果瀏覽器支援）
+                try {
+                    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    const oscillator = audioContext.createOscillator();
+                    const gainNode = audioContext.createGain();
+                    
+                    oscillator.connect(gainNode);
+                    gainNode.connect(audioContext.destination);
+                    
+                    oscillator.frequency.setValueAtTime(523.25, audioContext.currentTime); // C5
+                    oscillator.frequency.setValueAtTime(659.25, audioContext.currentTime + 0.1); // E5
+                    oscillator.frequency.setValueAtTime(783.99, audioContext.currentTime + 0.2); // G5
+                    
+                    gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+                    
+                    oscillator.start(audioContext.currentTime);
+                    oscillator.stop(audioContext.currentTime + 0.5);
+                } catch (e) {
+                    console.log('無法播放音效');
+                }
+            } else {
+                // 未中獎
+                resultDisplay.innerHTML = '很遺憾，未中獎';
+                resultDisplay.style.background = 'rgba(128,128,128,0.9)';
+                resultDisplay.style.color = 'white';
+                resultDisplay.classList.remove('celebration');
+            }
+            
+            gameState = 'finished';
+        }
+
+        // 控制函數
+        function adjustSpeed(delta) {
+            if (gameState === 'spinning') {
+                ROTATION_SPEED = Math.max(0.001, Math.min(1.0, ROTATION_SPEED + delta));
+            }
+        }
+
+        function startLottery() {
+            if (gameState === 'spinning' && balls.filter(b => b.active).length > 0) {
+                // 首次點擊時初始化音效（需要用戶互動才能啟動音效）
+                if (!audioContext) {
+                    initAudio();
+                }
+                
+                isSlowingDown = true;
+                slowDownTimer = 600; // 10秒
+                gameState = 'slowing';
+                resultDisplay.innerHTML = '抽選進行中...';
+                resultDisplay.style.background = 'rgba(255,255,255,0.9)';
+                resultDisplay.style.color = '#333';
+                resultDisplay.classList.remove('celebration');
+            }
+        }
+
+        function updateBalls() {
+            if (gameState === 'spinning') {
+                initBalls();
+                resultDisplay.innerHTML = '球數已更新！';
+                resultDisplay.style.background = 'rgba(144,238,144,0.9)';
+                resultDisplay.style.color = '#333';
+                resultDisplay.classList.remove('celebration');
+                
+                // 3秒後恢復原始狀態
+                setTimeout(() => {
+                    if (gameState === 'spinning') {
+                        resultDisplay.innerHTML = '準備抽選中...';
+                        resultDisplay.style.background = 'rgba(255,255,255,0.9)';
+                    }
+                }, 3000);
+            }
+        }
+
+        function resetGame() {
+            // 停止所有音效
+            stopRollingSound();
+            
+            // 重置所有狀態
+            initBalls();
+            droppingBall = null;
+            currentResult = null;
+            confetti = [];
+            isSlowingDown = false;
+            slowDownTimer = 0;
+            gameState = 'spinning';
+            ROTATION_SPEED = 0.005;
+            rotation = 0;
+            
+            resultDisplay.innerHTML = '準備抽選中...';
+            resultDisplay.style.background = 'rgba(255,255,255,0.9)';
+            resultDisplay.style.color = '#333';
+            resultDisplay.classList.remove('celebration');
+            
+            // 重新開始滾動音效
+            if (isAudioEnabled) {
+                setTimeout(() => {
+                    createRollingSound();
+                }, 100);
+            }
+        }
+
+        // 遊戲主循環
+        function gameLoop() {
+            update();
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
+
+        // 初始化並開始遊戲
+        initBalls();
+        gameLoop();
+
+        // 添加音效控制提示
+        console.log('💡 提示: 點擊"開始抽選"按鈕後將啟動音效系統');
+        console.log('🔊 音效包含: 球滾動聲、碰撞聲、掉落聲和慶祝音效');
+
+        // 鍵盤控制（可選）
+        document.addEventListener('keydown', (e) => {
+            switch(e.key) {
+                case 'ArrowUp':
+                    adjustSpeed(0.05);
+                    break;
+                case 'ArrowDown':
+                    adjustSpeed(-0.05);
+                    break;
+                case ' ':
+                    e.preventDefault();
+                    startLottery();
+                    break;
+                case 'r':
+                    resetGame();
+                    break;
+            }
+        });
+    </script>
+</body>
+</html>
